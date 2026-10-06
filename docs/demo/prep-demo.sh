@@ -69,7 +69,7 @@ API_URL="$API" INVENTORY_URL="$INV" node scripts/seed/backfill-inventory.js 2>&1
 step "Test orders yerleştiriliyor (her satıcı için en az 1 sipariş)"
 TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
   -d '{"email":"buyer1@example.com","password":"password123"}' \
-  "$API/api/auth/login" | python3 -c "import json,sys;print(json.load(sys.stdin)['data']['accessToken'])")
+  "$API/api/auth/login" | python -c "import json,sys;print(json.load(sys.stdin)['data']['accessToken'])")
 
 # Her satıcı için ilk listing'ini seç → o ürünü siparişe ekle
 SELLER_LISTINGS=$(node -e '
@@ -97,7 +97,7 @@ echo "$SELLER_LISTINGS" | while IFS=, read -r PID LID NAME; do
   RESULT=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
     -H "Idempotency-Key: $(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid)" \
     -d '{"card":{"holderName":"Demo","number":"4111111111111111","expireMonth":"12","expireYear":"2030","cvc":"123"}}' \
-    "$API/api/orders" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['data']['id'] if d.get('success') else 0)" 2>/dev/null)
+    "$API/api/orders" | python -c "import json,sys;d=json.load(sys.stdin);print(d['data']['id'] if d.get('success') else 0)" 2>/dev/null)
   if [ "${RESULT:-0}" -gt 0 ]; then
     echo "  ✓ order #$RESULT → $NAME"
   fi
@@ -107,13 +107,13 @@ done
 step "Admin payout batch (bugün için)"
 ADMIN=$(curl -s -X POST -H "Content-Type: application/json" \
   -d '{"email":"alice@example.com","password":"password123"}' \
-  "$API/api/auth/login" | python3 -c "import json,sys;print(json.load(sys.stdin)['data']['accessToken'])")
+  "$API/api/auth/login" | python -c "import json,sys;print(json.load(sys.stdin)['data']['accessToken'])")
 
 START=$(date -u -v-1d +%Y-%m-%d 2>/dev/null || date -u -d 'yesterday' +%Y-%m-%d)
 END=$(date -u -v+1d +%Y-%m-%d 2>/dev/null || date -u -d 'tomorrow' +%Y-%m-%d)
 PAYOUT_COUNT=$(curl -s -X POST -H "Authorization: Bearer $ADMIN" -H "Content-Type: application/json" \
   -d "{\"periodStart\":\"$START\",\"periodEnd\":\"$END\"}" \
-  "$API/api/admin/payouts/run" | python3 -c "
+  "$API/api/admin/payouts/run" | python -c "
 import json,sys
 r=json.load(sys.stdin)
 print(len(r['data']) if r.get('success') else 0)")
@@ -121,8 +121,8 @@ echo "  ✓ $PAYOUT_COUNT payout(s) created"
 
 # 7. Final smoke
 step "Final smoke"
-TOTAL_PRODUCTS=$(curl -s "$API/api/products?page=0&size=1" | python3 -c "import json,sys;print(json.load(sys.stdin)['data']['totalElements'])")
-ACTIVE_SELLERS=$(curl -s -H "Authorization: Bearer $ADMIN" "$API/api/sellers/admin?status=ACTIVE" | python3 -c "import json,sys;print(len(json.load(sys.stdin)['data']))")
+TOTAL_PRODUCTS=$(curl -s "$API/api/products?page=0&size=1" | python -c "import json,sys;print(json.load(sys.stdin)['data']['totalElements'])")
+ACTIVE_SELLERS=$(curl -s -H "Authorization: Bearer $ADMIN" "$API/api/sellers/admin?status=ACTIVE" | python -c "import json,sys;print(len(json.load(sys.stdin)['data']))")
 
 echo "  total products  : $TOTAL_PRODUCTS"
 echo "  active sellers  : $ACTIVE_SELLERS"

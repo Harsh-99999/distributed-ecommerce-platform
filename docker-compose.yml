@@ -328,7 +328,7 @@ services:
   # Buildx git-context automatically clones the FE repo at build time.
   frontend:
     build:
-      context: https://github.com/eaaslan/springboot-ecommerce-frontend.git#main
+      context: ./frontend-app
     ports: ["80:80"]
     depends_on:
       api-gateway: { condition: service_healthy }
